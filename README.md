@@ -1,0 +1,1 @@
+# stm32u5g9j-dk2-bsp
