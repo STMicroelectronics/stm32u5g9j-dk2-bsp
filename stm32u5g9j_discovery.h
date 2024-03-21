@@ -147,10 +147,10 @@ typedef struct
 #define USE_STM32U5G9J_DK2
 #endif /* USE_STM32U5G9J_DK2 */
 /**
-  * @brief STM32U5G9J Discovery BSP Driver version number V1.1.0
+  * @brief STM32U5G9J Discovery BSP Driver version number V1.2.0
   */
 #define STM32U5G9J_DK2_BSP_VERSION_MAIN   (0x01U) /*!< [31:24] main version */
-#define STM32U5G9J_DK2_BSP_VERSION_SUB1   (0x01U) /*!< [23:16] sub1 version */
+#define STM32U5G9J_DK2_BSP_VERSION_SUB1   (0x02U) /*!< [23:16] sub1 version */
 #define STM32U5G9J_DK2_BSP_VERSION_SUB2   (0x00U) /*!< [15:8]  sub2 version */
 #define STM32U5G9J_DK2_BSP_VERSION_RC     (0x00U) /*!< [7:0]  release candidate */
 #define STM32U5G9J_DK2_BSP_VERSION        ((STM32U5G9J_DK2_BSP_VERSION_MAIN << 24)\

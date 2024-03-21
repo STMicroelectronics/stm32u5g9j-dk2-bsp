@@ -107,7 +107,6 @@ static uint32_t HSPINor_IsMspCbValid[HSPI_NOR_INSTANCES_NUMBER] = {0};
   */
 
 
-
 /* Private functions ---------------------------------------------------------*/
 
 /** @defgroup STM32U5G9J_DK2_HSPI_NOR_Private_Functions HSPI NOR Private Functions
@@ -350,7 +349,6 @@ __weak HAL_StatusTypeDef MX_HSPI_ClockConfig(XSPI_HandleTypeDef *hhspi)
 /**
   * @}
   */
-
 
 
 /** @addtogroup STM32U5G9J_DK2_HSPI_NOR_Exported_Functions HSPI NOR Exported Functions

@@ -41,9 +41,12 @@
      o Select the LCD layer to be used using the BSP_LCD_SelectLayer() function.
      o Enable the LCD display using the BSP_LCD_DisplayOn() function.
      o Disable the LCD display using the BSP_LCD_DisplayOff() function.
+   o Set the display brightness using the BSP_LCD_SetBrightness() function. Not that
+       by default the brightness is set to 50%
+     o Get the display brightness using the BSP_LCD_GetBrightness() function.
      o Write a pixel to the LCD memory using the BSP_LCD_WritePixel() function.
      o Read a pixel from the LCD memory using the BSP_LCD_ReadPixel() function.
-     o Draw an horizontal line using the BSP_LCD_DrawHLine() function.
+     o Draw a horizontal line using the BSP_LCD_DrawHLine() function.
      o Draw a vertical line using the BSP_LCD_DrawVLine() function.
      o Draw a bitmap image using the BSP_LCD_DrawBitmap() function.
 
@@ -100,6 +103,8 @@
 /** @defgroup STM32U5G9J_DK2_LCD_Private_Variables LCD Private Variables
   * @{
   */
+/* Timer handler declaration */
+static TIM_HandleTypeDef hlcd_tim;
 /**
   * @}
   */
@@ -147,6 +152,10 @@ static void DMA2D_MspDeInit(DMA2D_HandleTypeDef *hdma2d);
 static void LL_FillBuffer(uint32_t Instance, uint32_t *pDst, uint32_t xSize, uint32_t ySize, uint32_t OffLine,
                           uint32_t Color);
 static void LL_ConvertLineToRGB(uint32_t Instance, uint32_t *pSrc, uint32_t *pDst, uint32_t xSize, uint32_t ColorMode);
+static void TIMx_PWM_MspInit(TIM_HandleTypeDef *htim);
+static void TIMx_PWM_MspDeInit(TIM_HandleTypeDef *htim);
+static void TIMx_PWM_DeInit(TIM_HandleTypeDef *htim);
+static void TIMx_PWM_Init(TIM_HandleTypeDef *htim);
 /**
   * @}
   */
@@ -264,6 +273,9 @@ int32_t BSP_LCD_InitEx(uint32_t Instance, uint32_t Orientation, uint32_t PixelFo
         ret = BSP_ERROR_PERIPH_FAILURE;
       }
 
+      /* Initialize TIM in PWM mode to control brightness */
+      TIMx_PWM_Init(&hlcd_tim);
+
       /* By default the reload is activated and executed immediately */
       Lcd_Ctx[Instance].ReloadEnable = 1U;
     }
@@ -300,6 +312,9 @@ int32_t BSP_LCD_DeInit(uint32_t Instance)
     }
     else
     {
+      /* DeInit TIM PWM */
+      TIMx_PWM_DeInit(&hlcd_tim);
+
       Lcd_Ctx[Instance].IsMspCallbacksValid = 0;
     }
   }
@@ -881,6 +896,51 @@ int32_t BSP_LCD_DisplayOff(uint32_t Instance)
 }
 
 /**
+  * @brief  Set the brightness value
+  * @param  Instance    LCD Instance
+  * @param  Brightness [00: Min (black), 100 Max]
+  * @retval BSP status
+  */
+int32_t BSP_LCD_SetBrightness(uint32_t Instance, uint32_t Brightness)
+{
+  int32_t ret = BSP_ERROR_NONE;
+
+  if (Instance >= LCD_INSTANCES_NBR)
+  {
+    ret = BSP_ERROR_WRONG_PARAM;
+  }
+  else
+  {
+    __HAL_TIM_SET_COMPARE(&hlcd_tim, LCD_TIMx_CHANNEL, 2U * Brightness);
+    Lcd_Ctx[Instance].Brightness = Brightness;
+  }
+
+  return ret;
+}
+
+/**
+  * @brief  Set the brightness value
+  * @param  Instance    LCD Instance
+  * @param  Brightness [00: Min (black), 100 Max]
+  * @retval BSP status
+  */
+int32_t BSP_LCD_GetBrightness(uint32_t Instance, uint32_t *Brightness)
+{
+  int32_t ret = BSP_ERROR_NONE;
+
+  if (Instance >= LCD_INSTANCES_NBR)
+  {
+    ret = BSP_ERROR_WRONG_PARAM;
+  }
+  else
+  {
+    *Brightness = Lcd_Ctx[Instance].Brightness;
+  }
+
+  return ret;
+}
+
+/**
   * @brief  Draws a bitmap picture loaded in the internal Flash in currently active layer.
   * @param  Instance LCD Instance
   * @param  Xpos Bmp X position in the LCD
@@ -947,7 +1007,7 @@ int32_t BSP_LCD_DrawBitmap(uint32_t Instance, uint32_t Xpos, uint32_t Ypos, uint
 }
 
 /**
-  * @brief  Draw a horizontal line on LCD.
+  * @brief  Fill rectangle with RGB buffer.
   * @param  Instance LCD Instance.
   * @param  Xpos X position.
   * @param  Ypos Y position.
@@ -1000,7 +1060,7 @@ int32_t BSP_LCD_FillRGBRect(uint32_t Instance, uint32_t Xpos, uint32_t Ypos, uin
 }
 
 /**
-  * @brief  Draws an horizontal line in currently active layer.
+  * @brief  Draws a horizontal line in currently active layer.
   * @param  Instance   LCD Instance
   * @param  Xpos  X position
   * @param  Ypos  Y position
@@ -1322,13 +1382,6 @@ static void LTDC_MspInit(LTDC_HandleTypeDef *hltdc)
     gpio_init_structure.Alternate = GPIO_AF8_LTDC;
     HAL_GPIO_Init(GPIOD, &gpio_init_structure);
 
-    /* LTDC BL */
-    gpio_init_structure.Mode = GPIO_MODE_INPUT;
-    gpio_init_structure.Pull = GPIO_NOPULL;
-    gpio_init_structure.Speed = GPIO_SPEED_FREQ_MEDIUM;
-    gpio_init_structure.Pin = GPIO_PIN_6;
-    HAL_GPIO_Init(GPIOE, &gpio_init_structure);
-
     gpio_init_structure.Mode      = GPIO_MODE_OUTPUT_PP;
     gpio_init_structure.Pull      = GPIO_NOPULL;
     gpio_init_structure.Speed     = GPIO_SPEED_FREQ_MEDIUM;
@@ -1417,6 +1470,108 @@ static void DMA2D_MspDeInit(DMA2D_HandleTypeDef *hdma2d)
   }
 }
 
+/**
+  * @brief  Initializes TIM MSP.
+  * @param  htim  TIM handle
+  * @retval None
+  */
+static void TIMx_PWM_MspInit(TIM_HandleTypeDef *htim)
+{
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(htim);
+
+  GPIO_InitTypeDef gpio_init_structure;
+
+  LCD_BL_CTRL_GPIO_CLK_ENABLE();
+
+  /* TIMx Peripheral clock enable */
+  LCD_TIMx_CLK_ENABLE();
+
+  /* Timer channel configuration */
+  gpio_init_structure.Mode      = GPIO_MODE_AF_PP;
+  gpio_init_structure.Pull      = GPIO_NOPULL;
+  gpio_init_structure.Speed     = GPIO_SPEED_FREQ_MEDIUM;
+  gpio_init_structure.Alternate = LCD_TIMx_CHANNEL_AF;
+  gpio_init_structure.Pin       = LCD_BL_CTRL_PIN; /* BL_CTRL */
+
+  HAL_GPIO_Init(LCD_BL_CTRL_GPIO_PORT, &gpio_init_structure);
+}
+
+/**
+  * @brief  De-Initializes TIM MSP.
+  * @param  htim TIM handle
+  * @retval None
+  */
+static void TIMx_PWM_MspDeInit(TIM_HandleTypeDef *htim)
+{
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(htim);
+
+  GPIO_InitTypeDef gpio_init_structure;
+
+  /* TIMx Peripheral clock enable */
+  LCD_BL_CTRL_GPIO_CLK_DISABLE();
+
+  /* Timer channel configuration */
+  gpio_init_structure.Pin = LCD_BL_CTRL_PIN; /* BL_CTRL */
+  HAL_GPIO_DeInit(LCD_BL_CTRL_GPIO_PORT, gpio_init_structure.Pin);
+}
+
+/**
+  * @brief  Initializes TIM in PWM mode
+  * @param  htim TIM handle
+  * @retval None
+  */
+static void TIMx_PWM_Init(TIM_HandleTypeDef *htim)
+{
+  TIM_OC_InitTypeDef LCD_TIM_Config;
+
+  htim->Instance = LCD_TIMx;
+  (void)HAL_TIM_PWM_DeInit(htim);
+
+  TIMx_PWM_MspInit(htim);
+
+  htim->Init.Prescaler         = LCD_TIMX_PRESCALER_VALUE;
+  htim->Init.Period            = LCD_TIMX_PERIOD_VALUE - 1U;
+  htim->Init.ClockDivision     = 0;
+  htim->Init.CounterMode       = TIM_COUNTERMODE_UP;
+  htim->Init.RepetitionCounter = 0;
+  htim->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  (void)HAL_TIM_PWM_Init(htim);
+
+  /* Common configuration for all channels */
+  LCD_TIM_Config.OCMode       = TIM_OCMODE_PWM1;
+  LCD_TIM_Config.OCPolarity   = TIM_OCPOLARITY_HIGH;
+  LCD_TIM_Config.OCFastMode   = TIM_OCFAST_DISABLE;
+  LCD_TIM_Config.OCNPolarity  = TIM_OCNPOLARITY_HIGH;
+  LCD_TIM_Config.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+  LCD_TIM_Config.OCIdleState  = TIM_OCIDLESTATE_RESET;
+
+  /* Set the default pulse value for channel: 50% duty cycle */
+  LCD_TIM_Config.Pulse = 100U;
+  Lcd_Ctx[0].Brightness = LCD_TIM_Config.Pulse / 2U;
+
+  (void)HAL_TIM_PWM_ConfigChannel(&hlcd_tim, &LCD_TIM_Config, LCD_TIMx_CHANNEL);
+
+  /* Start PWM Timer channel */
+  (void)HAL_TIM_PWM_Start(&hlcd_tim, LCD_TIMx_CHANNEL);
+}
+
+/**
+  * @brief  De-Initializes TIM in PWM mode
+  * @param  htim TIM handle
+  * @retval None
+  */
+static void TIMx_PWM_DeInit(TIM_HandleTypeDef *htim)
+{
+  htim->Instance = LCD_TIMx;
+
+  /* Timer de-intialization */
+  (void)HAL_TIM_PWM_DeInit(htim);
+
+  /* Timer Msp de-intialization */
+  TIMx_PWM_MspDeInit(htim);
+}
 /**
   * @}
   */

@@ -73,6 +73,22 @@ extern "C" {
 #define LCD_DISP_EN_GPIO_CLK_ENABLE()        __HAL_RCC_GPIOE_CLK_ENABLE()
 #define LCD_DISP_EN_GPIO_CLK_DISABLE()       __HAL_RCC_GPIOE_CLK_DISABLE()
 
+/* Back-light control pin */
+#define LCD_BL_CTRL_PIN                       GPIO_PIN_6
+#define LCD_BL_CTRL_GPIO_PORT                 GPIOE
+#define LCD_BL_CTRL_GPIO_CLK_ENABLE()         __HAL_RCC_GPIOE_CLK_ENABLE()
+#define LCD_BL_CTRL_GPIO_CLK_DISABLE()        __HAL_RCC_GPIOE_CLK_DISABLE()
+
+/**
+  * @brief Definition for LCD Timer used to control the Brightnes
+  */
+#define LCD_TIMx                           TIM3
+#define LCD_TIMx_CLK_ENABLE()              __HAL_RCC_TIM3_CLK_ENABLE()
+#define LCD_TIMx_CLK_DISABLE()             __HAL_RCC_TIM3_CLK_DISABLE()
+#define LCD_TIMx_CHANNEL                   TIM_CHANNEL_4
+#define LCD_TIMx_CHANNEL_AF                GPIO_AF2_TIM3
+#define LCD_TIMX_PERIOD_VALUE              ((uint32_t)200) /* Period Value    */
+#define LCD_TIMX_PRESCALER_VALUE           ((uint32_t)27)  /* Prescaler Value */
 
 /* RGB565 colors definitions */
 #define LCD_COLOR_RGB565_BLUE                 0x001FU
@@ -272,6 +288,8 @@ int32_t BSP_LCD_ResetColorKeying(uint32_t Instance, uint32_t LayerIndex);
 /* LCD generic APIs: Display control */
 int32_t BSP_LCD_DisplayOn(uint32_t Instance);
 int32_t BSP_LCD_DisplayOff(uint32_t Instance);
+int32_t BSP_LCD_SetBrightness(uint32_t Instance, uint32_t Brightness);
+int32_t BSP_LCD_GetBrightness(uint32_t Instance, uint32_t *Brightness);
 int32_t BSP_LCD_GetXSize(uint32_t Instance, uint32_t *XSize);
 int32_t BSP_LCD_GetYSize(uint32_t Instance, uint32_t *YSize);
 
