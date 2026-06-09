@@ -78,8 +78,7 @@
   Note:
   --------
     Regarding the "Instance" parameter, needed for all functions, it is used to select
-    an LCD instance. On the STM32H7B3I-EVAL board, there's one instance. Then, this
-    parameter should be 0.
+    an LCD instance.
 
   @endverbatim
   ******************************************************************************
@@ -109,7 +108,7 @@ static TIM_HandleTypeDef hlcd_tim;
   * @}
   */
 
-/** @defgroup STM32H573I_DK_LCD_Private_Types LCD Private Types
+/** @defgroup STM32U5G9J_DK_LCD_Private_Types LCD Private Types
   * @{
   */
 const LCD_UTILS_Drv_t LCD_Driver =

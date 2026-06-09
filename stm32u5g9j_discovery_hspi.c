@@ -179,7 +179,7 @@ int32_t BSP_HSPI_NOR_Init(uint32_t Instance, BSP_HSPI_NOR_Init_t *Init)
         ret = BSP_ERROR_PERIPH_FAILURE;
       }
 
-      if (MX_HSPI_ClockConfig(&hhspi_nor[Instance]) != HAL_OK)
+      else if (MX_HSPI_ClockConfig(&hhspi_nor[Instance]) != HAL_OK)
       {
         ret = BSP_ERROR_PERIPH_FAILURE;
       }

@@ -138,7 +138,7 @@ static uint32_t IsComMspCbValid[COMn] = {0};
   */
 
 /**
-  * @brief  This method returns the STM32H750B Discovery BSP Driver revision
+  * @brief  This method returns the STM32U5G9J Discovery BSP Driver revision
   * @retval version: 0xXYZR (8bits for each decimal, R for RC)
   */
 uint32_t BSP_GetVersion(void)
@@ -665,7 +665,7 @@ PUTCHAR_PROTOTYPE
   * @}
   */
 
-/** @defgroup STM32H7B3I_DISCO_LOW_LEVEL_Private_Functions LOW LEVEL Private Functions
+/** @defgroup STM32U5G9J_DISCO_LOW_LEVEL_Private_Functions LOW LEVEL Private Functions
   * @{
   */
 #if (USE_BSP_COM_FEATURE > 0)

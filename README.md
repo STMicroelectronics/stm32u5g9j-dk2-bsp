@@ -1,6 +1,6 @@
 # BSP STM32U5G9J-DK2 Component
 
-![latest tag](https://img.shields.io/github/v/tag/STMicroelectronics/stm32u5g9j-dk2-bsp.svg?color=brightgreen)
+![tag](https://img.shields.io/badge/tag-v1.2.1-brightgreen.svg)
 
 ## Overview
 
